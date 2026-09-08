@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id                Int             @id @default(autoincrement())
+  handle            String
+  realName          String?
+  nationality       String?
+  birthDate         DateTime?
+  status            String?
+  role              String?
+  imageUrl          String?
+  currentTeam       String?
+  totalWinnings     String?
+  liquipediaPageId  Int?            @unique
+  sourceUrl         String
+  sourceUpdatedAt   DateTime?
+  syncedAt          DateTime        @default(now())
+  hiddenAt          DateTime?
+  aliases           PlayerAlias[]
+  teamTenures       TeamTenure[]
+  participations    Participation[]
+  achievements      Achievement[]
+
+  @@index([handle])
+}
+
+model PlayerAlias {
+  id       Int    @id @default(autoincrement())
+  alias    String
+  playerId Int
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([alias])
+  @@unique([playerId, alias])
+}
+
+model Team {
+  id              Int          @id @default(autoincrement())
+  name            String
+  pageName        String       @unique
+  location        String?
+  region          String?
+  sponsors        String?
+  website         String?
+  createdDate     DateTime?
+  disbandedDate   DateTime?
+  inactive        Boolean      @default(false)
+  sourceUrl       String
+  sourceUpdatedAt DateTime?
+  syncedAt        DateTime?
+  members         TeamMember[]
+
+  @@index([name])
+}
+
+model TeamMember {
+  id       Int      @id @default(autoincrement())
+  handle   String
+  realName String?
+  role     String?
+  joinDate DateTime?
+  teamId   Int
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, handle, role])
+}
+
+model TeamTenure {
+  id        Int       @id @default(autoincrement())
+  teamName  String
+  role      String?
+  startDate DateTime?
+  endDate   DateTime?
+  isStandin Boolean   @default(false)
+  playerId  Int
+  player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model Participation {
+  id            Int      @id @default(autoincrement())
+  tournament    String
+  tournamentUrl String?
+  startDate     DateTime?
+  tier          String?
+  teamName      String?
+  placement     String?
+  result        String?
+  prize         String?
+  playerId      Int
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, startDate])
+  @@unique([playerId, tournament, teamName])
+}
+
+model Achievement {
+  id            Int      @id @default(autoincrement())
+  tournament    String
+  tournamentUrl String?
+  startDate     DateTime?
+  tier          String?
+  teamName      String?
+  placement     String?
+  result        String?
+  prize         String?
+  playerId      Int
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId, startDate])
+  @@unique([playerId, tournament, teamName])
+}
+
+model SyncRun {
+  id         Int      @id @default(autoincrement())
+  source     String
+  status     String
+  imported   Int      @default(0)
+  message    String?
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+}
+
+model TransferUpdate {
+  id        Int      @id @default(autoincrement())
+  date      String
+  players   String
+  previous  String
+  current   String
+  previousRole String?
+  currentRole  String?
+  statusChange String?
+  sourceUrl String?
+  syncedAt  DateTime @default(now())
+
+  @@unique([date, players, previous, current])
+  @@index([date])
+}
+
+model NewsUpdate {
+  id        Int      @id @default(autoincrement())
+  category  String
+  title     String
+  timestamp DateTime
+  comment   String?
+  url       String
+  syncedAt  DateTime @default(now())
+
+  @@unique([category, title, timestamp])
+  @@index([category, timestamp])
+}
